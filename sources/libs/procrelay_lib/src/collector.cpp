@@ -1,8 +1,11 @@
+#include "procrelay/collector.hpp"
+
+#include "procrelay/log.hpp"
+
 #include <algorithm>
 #include <cctype>
 #include <ctime>
 #include <fstream>
-#include <procrelay/collector.hpp>
 #include <sstream>
 #include <string>
 #include <unistd.h>
@@ -77,6 +80,7 @@ std::optional<int64_t> read_btime(const fs::path &proc_root)
             return std::nullopt;
         }
     }
+    log::warn("btime not found in ", (proc_root / "stat").string());
     return std::nullopt;
 }
 
@@ -90,7 +94,9 @@ struct SystemContext {
 
 SystemContext make_system_context(const fs::path &proc_root)
 {
-    return SystemContext{read_btime(proc_root).value_or(0), ::sysconf(_SC_CLK_TCK)};
+    SystemContext ctx{read_btime(proc_root).value_or(0), ::sysconf(_SC_CLK_TCK)};
+    log::debug("system context: btime=", ctx.m_btime, " clk_tck=", ctx.m_clk_tck);
+    return ctx;
 }
 
 /**
@@ -157,6 +163,7 @@ std::optional<ProcessInfo> parse_process(const fs::path &pid_dir, const SystemCo
     auto rparen = content.rfind(')');
 
     if (lparen == std::string::npos || rparen == std::string::npos || rparen < lparen) {
+        log::debug("skipping ", pid_dir.string(), ": malformed comm parens in stat");
         return std::nullopt;
     }
 
@@ -180,6 +187,7 @@ std::optional<ProcessInfo> parse_process(const fs::path &pid_dir, const SystemCo
     // Fields after comm are positional
     // state[0]=#3, ppid[1]=#4, utime[11]=#14, stime[12]=#15, starttime[19]=#22.
     if (fields.size() < 20) {
+        log::debug("skipping ", pid_dir.string(), ": stat has only ", fields.size(), " fields");
         return std::nullopt;
     }
 
@@ -194,7 +202,8 @@ std::optional<ProcessInfo> parse_process(const fs::path &pid_dir, const SystemCo
         utime      = std::stoll(fields[11]);
         stime      = std::stoll(fields[12]);
         starttime  = std::stoll(fields[19]);
-    } catch (const std::exception &) {
+    } catch (const std::exception &e) {
+        log::debug("skipping ", pid_dir.string(), ": failed to parse stat fields: ", e.what());
         return std::nullopt;
     }
 
@@ -215,8 +224,11 @@ std::vector<ProcessInfo> scan(const std::filesystem::path &proc_root)
 {
     std::vector<ProcessInfo> result;
 
+    log::debug("scanning ", proc_root.string());
+
     std::error_code ec;
     if (!fs::is_directory(proc_root, ec)) {
+        log::warn("proc root is not a directory: ", proc_root.string());
         return result;
     }
 
@@ -224,6 +236,7 @@ std::vector<ProcessInfo> scan(const std::filesystem::path &proc_root)
 
     for (const auto &entry : fs::directory_iterator(proc_root, ec)) {
         if (ec) {
+            log::warn("directory iteration over ", proc_root.string(), " failed: ", ec.message());
             break;
         }
         if (!entry.is_directory()) {
@@ -242,14 +255,18 @@ std::vector<ProcessInfo> scan(const std::filesystem::path &proc_root)
     std::sort(result.begin(), result.end(),
               [](const ProcessInfo &a, const ProcessInfo &b) { return a.get_pid() < b.get_pid(); });
 
+    log::debug("scan found ", result.size(), " processes");
     return result;
 }
 
 std::optional<ProcessInfo> get_process(int pid, const std::filesystem::path &proc_root)
 {
+    log::debug("looking up pid ", pid, " under ", proc_root.string());
+
     std::error_code ec;
     fs::path        pid_dir = proc_root / std::to_string(pid);
     if (!fs::is_directory(pid_dir, ec)) {
+        log::debug("no directory for pid ", pid);
         return std::nullopt;
     }
 

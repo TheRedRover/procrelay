@@ -17,6 +17,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
+FetchContent_Declare(
+    httplib
+    GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
+    GIT_TAG v0.15.3
+)
+FetchContent_MakeAvailable(httplib)
+
+add_subdirectory(sources/libs/procrelay_log)
 add_subdirectory(sources/libs/procrelay_lib)
 add_subdirectory(sources/apps/server)
 add_subdirectory(tests)

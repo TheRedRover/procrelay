@@ -1,7 +1,8 @@
+#include "procrelay/process.hpp"
+
 #include <array>
 #include <cctype>
 #include <nlohmann/json.hpp>
-#include <procrelay/process.hpp>
 
 namespace procrelay
 {

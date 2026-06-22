@@ -11,6 +11,7 @@ target_include_directories(procrelay_lib
 target_link_libraries(procrelay_lib
     PRIVATE
         nlohmann_json::nlohmann_json
+        procrelay_log
 )
 
 target_compile_features(procrelay_lib PUBLIC cxx_std_20)

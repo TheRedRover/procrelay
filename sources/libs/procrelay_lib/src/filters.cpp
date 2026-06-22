@@ -1,5 +1,7 @@
 #include "procrelay/filters.hpp"
 
+#include "procrelay/log.hpp"
+
 #include <algorithm>
 #include <charconv>
 #include <utility>
@@ -60,6 +62,7 @@ ParseResult parse_filters(const FilterParams &params)
     if (params.state.has_value()) {
         auto state = state_from_label(*params.state);
         if (!state.has_value()) {
+            log::debug("rejecting filters: unknown state '", *params.state, "'");
             return FilterError{"invalid_state", "unknown state '" + *params.state +
                                                     "'; valid: " + valid_state_labels()};
         }
@@ -72,6 +75,7 @@ ParseResult parse_filters(const FilterParams &params)
         if (params.started_after.has_value()) {
             auto value = parse_epoch(*params.started_after);
             if (!value.has_value()) {
+                log::debug("rejecting filters: started_after='", *params.started_after, "'");
                 return FilterError{"invalid_time", "started_after is not a valid integer"};
             }
             tf.m_after = *value;
@@ -80,18 +84,21 @@ ParseResult parse_filters(const FilterParams &params)
         if (params.started_before.has_value()) {
             auto value = parse_epoch(*params.started_before);
             if (!value.has_value()) {
+                log::debug("rejecting filters: started_before='", *params.started_before, "'");
                 return FilterError{"invalid_time", "started_before is not a valid integer"};
             }
             tf.m_before = *value;
         }
 
         if (tf.m_after.has_value() && tf.m_before.has_value() && *tf.m_after > *tf.m_before) {
+            log::debug("rejecting filters: started_after > started_before");
             return FilterError{"invalid_range", "started_after must be <= started_before"};
         }
 
         chain.push_back(tf);
     }
 
+    log::debug("parsed ", chain.size(), " filter(s)");
     return chain;
 }
 
@@ -100,7 +107,9 @@ std::vector<ProcessInfo> apply_filters(const std::vector<ProcessInfo> &procs,
 {
     std::vector<ProcessInfo> result = procs;
     for (const auto &filter : chain) {
+        const std::size_t before = result.size();
         result = std::visit([&](const auto &f) { return apply_one(std::move(result), f); }, filter);
+        log::debug("filter narrowed ", before, " -> ", result.size(), " processes");
     }
     return result;
 }

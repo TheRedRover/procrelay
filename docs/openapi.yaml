@@ -37,10 +37,11 @@ paths:
                 processes:
                   - pid: 1
                     ppid: 0
-                    name: systemd
+                    comm: systemd
                     cmdline: /sbin/init
                     state: S
                     state_label: sleeping
+                    cpu_time_s: 1.23
                     start_time: 1782086400
                     start_time_iso: "2026-06-22T00:00:00Z"
                 count: 1
@@ -66,10 +67,11 @@ paths:
               example:
                 pid: 1
                 ppid: 0
-                name: systemd
+                comm: systemd
                 cmdline: /sbin/init
                 state: S
                 state_label: sleeping
+                cpu_time_s: 1.23
                 start_time: 1782086400
                 start_time_iso: "2026-06-22T00:00:00Z"
         '400':
@@ -144,10 +146,11 @@ components:
       required:
         - pid
         - ppid
-        - name
+        - comm
         - cmdline
         - state
         - state_label
+        - cpu_time_s
         - start_time
         - start_time_iso
       properties:
@@ -156,7 +159,7 @@ components:
         ppid:
           type: integer
           description: Parent process ID
-        name:
+        comm:
           type: string
           description: Process name from the stat comm field, kernel-truncated to 15 chars
         cmdline:
@@ -181,6 +184,10 @@ components:
             - parked
             - idle
             - unknown
+        cpu_time_s:
+          type: number
+          format: double
+          description: CPU time used (utime + stime), in seconds
         start_time:
           type: integer
           format: int64

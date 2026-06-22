@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <procrelay/collector.hpp>
+#include <string>
+#include <vector>
 
 using namespace procrelay;
 namespace fs = std::filesystem;
@@ -15,7 +17,9 @@ TEST(Collector, GetNormalProcess)
     EXPECT_EQ(result->get_pid(), 1);
     EXPECT_EQ(result->get_ppid(), 0);
     EXPECT_EQ(result->get_comm(), "systemd");
-    EXPECT_EQ(result->get_cmdline(), "/sbin/init");
+    EXPECT_EQ(result->get_cmdline(),
+              (std::vector<std::string>{"/usr/lib/systemd/systemd", "--switched-root", "--system",
+                                        "--deserialize=52", "splash"}));
     EXPECT_EQ(result->get_state_code(), 'S');
     EXPECT_EQ(result->get_state(), ProcessState::SLEEPING);
     EXPECT_GT(result->get_start_time(), 0);
@@ -31,7 +35,7 @@ TEST(Collector, KernelThreadCmdline)
 {
     auto result = get_process(2, PROC);
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result->get_cmdline(), "[kthreadd]");
+    EXPECT_TRUE(result->get_cmdline().empty());
 }
 
 TEST(Collector, CommWithParens)

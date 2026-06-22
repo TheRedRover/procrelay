@@ -38,7 +38,7 @@ paths:
                   - pid: 1
                     ppid: 0
                     comm: systemd
-                    cmdline: /sbin/init
+                    cmdline: ["/usr/lib/systemd/systemd", "--switched-root", "--system", "--deserialize=52", "splash"]
                     state: S
                     state_label: sleeping
                     cpu_time_s: 1.23
@@ -68,7 +68,7 @@ paths:
                 pid: 1
                 ppid: 0
                 comm: systemd
-                cmdline: /sbin/init
+                cmdline: ["/usr/lib/systemd/systemd", "--switched-root", "--system", "--deserialize=52", "splash"]
                 state: S
                 state_label: sleeping
                 cpu_time_s: 1.23
@@ -163,8 +163,10 @@ components:
           type: string
           description: Process name from the stat comm field, kernel-truncated to 15 chars
         cmdline:
-          type: string
-          description: Full command line as a single string; kernel threads show as [<name>]
+          type: array
+          items:
+            type: string
+          description: argv of the process; empty for kernel threads and others with no cmdline
         state:
           type: string
           minLength: 1

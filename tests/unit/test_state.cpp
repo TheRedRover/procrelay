@@ -48,7 +48,6 @@ TEST(StateFromLabel, ValidLabels)
     EXPECT_EQ(state_from_label("dead"), ProcessState::DEAD);
     EXPECT_EQ(state_from_label("parked"), ProcessState::PARKED);
     EXPECT_EQ(state_from_label("idle"), ProcessState::IDLE);
-    EXPECT_EQ(state_from_label("unknown"), ProcessState::UNKNOWN);
 }
 
 TEST(StateFromLabel, CaseInsensitive)

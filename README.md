@@ -26,18 +26,38 @@ ctest --test-dir build --output-on-failure
 
 ### Docker
 
+The [`Dockerfile`](docker/Dockerfile) is multi-stage:
+
+1. **build** -- compiles a fully static binary (`-DPROCRELAY_STATIC=ON`, tests skipped).
+2. **deploy** -- copies that single binary onto `scratch`. The final image has no
+   shell, libc, or package manager, runs as a non-root UID.
+
 Build the image:
 
 ```bash
 docker build -t procrelay -f docker/Dockerfile .
 ```
 
-Start and stop with Docker Compose:
+Run the image:
 
 ```bash
+docker run --rm --pid=host -p 8080:8080 procrelay
+```
+
+Or with Docker Compose:
+
+```bash
+# To start
 docker compose up -d
+# To stop
 docker compose down
 ```
+
+> **Visibility note.** On a default host (`hidepid=0`) the non-root user can read
+> every process's status files. On a host hardened with `hidepid=2`, a non-root
+> container can't see other users' processes.
+> Run as root (`docker run --user 0 ...` or `user: "0"` in compose)
+> or add the container to the `proc` gid in that case.
 
 ## Usage
 

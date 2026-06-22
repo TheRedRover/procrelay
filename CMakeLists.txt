@@ -7,7 +7,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 
-enable_testing()
+option(PROCRELAY_BUILD_TESTS "Build the unit test suite" ON)
+option(PROCRELAY_STATIC "Link executables statically (for scratch-based images)" OFF)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -27,4 +28,8 @@ FetchContent_MakeAvailable(httplib)
 add_subdirectory(sources/libs/procrelay_log)
 add_subdirectory(sources/libs/procrelay_lib)
 add_subdirectory(sources/apps/server)
-add_subdirectory(tests)
+
+if(PROCRELAY_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

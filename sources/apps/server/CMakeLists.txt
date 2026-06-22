@@ -6,3 +6,7 @@ target_link_libraries(procrelay-server
         httplib::httplib
         nlohmann_json::nlohmann_json
 )
+
+if(PROCRELAY_STATIC)
+    target_link_options(procrelay-server PRIVATE -static)
+endif()

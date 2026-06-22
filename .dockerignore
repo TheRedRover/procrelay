@@ -1,0 +1,10 @@
+.git
+.gitignore
+build/
+Testing/
+.cache/
+.vscode/
+compile_commands.json
+*.md
+docker/
+docs/

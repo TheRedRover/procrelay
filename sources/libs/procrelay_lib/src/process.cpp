@@ -1,13 +1,9 @@
-#include <procrelay/process.hpp>
-
 #include <array>
 #include <cctype>
 #include <nlohmann/json.hpp>
+#include <procrelay/process.hpp>
 
 namespace procrelay
-{
-
-namespace
 {
 
 struct StateMapping {
@@ -15,7 +11,7 @@ struct StateMapping {
     const char  *m_label;
 };
 
-// Canonical state <-> label table. label_from_state and state_from_label share it.
+// The single source of truth for state labels
 constexpr std::array<StateMapping, 10> STATE_TABLE{{
     {ProcessState::RUNNING, "running"},
     {ProcessState::SLEEPING, "sleeping"},
@@ -29,8 +25,6 @@ constexpr std::array<StateMapping, 10> STATE_TABLE{{
     {ProcessState::UNKNOWN, "unknown"},
 }};
 
-} // namespace
-
 ProcessInfo::ProcessInfo(int pid, int ppid, std::string comm, std::vector<std::string> cmdline,
                          char state_code, double cpu_time_s, int64_t start_time,
                          std::string start_time_iso)
@@ -43,17 +37,27 @@ ProcessInfo::ProcessInfo(int pid, int ppid, std::string comm, std::vector<std::s
 ProcessState state_from_char(char c)
 {
     switch (c) {
-    case 'R': return ProcessState::RUNNING;
-    case 'S': return ProcessState::SLEEPING;
-    case 'D': return ProcessState::DISK_SLEEP;
-    case 'Z': return ProcessState::ZOMBIE;
-    case 'T': return ProcessState::STOPPED;
-    case 't': return ProcessState::TRACING_STOP;
+    case 'R':
+        return ProcessState::RUNNING;
+    case 'S':
+        return ProcessState::SLEEPING;
+    case 'D':
+        return ProcessState::DISK_SLEEP;
+    case 'Z':
+        return ProcessState::ZOMBIE;
+    case 'T':
+        return ProcessState::STOPPED;
+    case 't':
+        return ProcessState::TRACING_STOP;
     case 'X':
-    case 'x': return ProcessState::DEAD;
-    case 'I': return ProcessState::IDLE;
-    case 'P': return ProcessState::PARKED;
-    default: return ProcessState::UNKNOWN;
+    case 'x':
+        return ProcessState::DEAD;
+    case 'I':
+        return ProcessState::IDLE;
+    case 'P':
+        return ProcessState::PARKED;
+    default:
+        return ProcessState::UNKNOWN;
     }
 }
 
@@ -85,6 +89,24 @@ std::optional<ProcessState> state_from_label(std::string_view label)
         }
     }
     return std::nullopt;
+}
+
+const std::string &valid_state_labels()
+{
+    static const std::string labels = [] {
+        std::string out;
+        for (const auto &entry : STATE_TABLE) {
+            if (entry.m_state == ProcessState::UNKNOWN) {
+                continue;
+            }
+            if (!out.empty()) {
+                out += ", ";
+            }
+            out += entry.m_label;
+        }
+        return out;
+    }();
+    return labels;
 }
 
 std::string ProcessInfo::to_json() const

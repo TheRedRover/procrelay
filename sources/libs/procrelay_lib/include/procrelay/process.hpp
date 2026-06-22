@@ -32,6 +32,13 @@ ProcessState                state_from_char(char c);
 std::string                 label_from_state(ProcessState s);
 std::optional<ProcessState> state_from_label(std::string_view label);
 
+/**
+ * @brief Returns a string of all valid state labels.
+ *
+ * @return const std::string& A string of all valid state labels, separated by commas.
+ */
+const std::string &valid_state_labels();
+
 class ProcessInfo
 {
 public:

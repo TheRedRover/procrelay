@@ -1,0 +1,28 @@
+# Build directories
+build/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+install_manifest.txt
+compile_commands.json
+
+# Compiled output
+*.o
+*.a
+*.so
+*.so.*
+
+# VSCode local files
+.vscode/**
+
+# Editor swap
+*.swp
+*.swo
+*~
+\#*\#

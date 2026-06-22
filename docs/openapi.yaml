@@ -1,0 +1,326 @@
+openapi: 3.1.0
+
+info:
+  title: procrelay
+  version: 0.1.0
+  description: |
+    Per-node Linux process health agent. Reads /proc and exposes process
+    status over a RESTful HTTP API. Intended to run on every cluster node;
+    the central dashboard scrapes all nodes.
+
+servers:
+  - url: http://localhost:8080/v1
+    description: Local agent (default port)
+
+tags:
+  - name: processes
+
+paths:
+  /processes:
+    get:
+      operationId: getProcesses
+      summary: List processes
+      description: |
+        Returns all processes visible in /proc.
+        Optionally filter with AND-combined query parameters.
+      tags: [processes]
+      parameters:
+        - $ref: '#/components/parameters/stateParam'
+        - $ref: '#/components/parameters/startedAfterParam'
+        - $ref: '#/components/parameters/startedBeforeParam'
+      responses:
+        '200':
+          description: Process list (array of process info, optionally filtered)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessList'
+              example:
+                processes:
+                  - pid: 1
+                    ppid: 0
+                    name: systemd
+                    cmdline: /sbin/init
+                    state: S
+                    state_label: sleeping
+                    start_time: 1750550400
+                    start_time_iso: "2026-06-22T00:00:00Z"
+                count: 1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+
+  /processes/{pid}:
+    parameters:
+      - $ref: '#/components/parameters/pidParam'
+    get:
+      operationId: getProcess
+      summary: Get a single process by PID
+      tags: [processes]
+      responses:
+        '200':
+          description: Process found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessInfo'
+              example:
+                pid: 1
+                ppid: 0
+                name: systemd
+                cmdline: /sbin/init
+                state: S
+                state_label: sleeping
+                start_time: 1750550400
+                start_time_iso: "2026-06-22T00:00:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+
+components:
+
+  parameters:
+    pidParam:
+      name: pid
+      in: path
+      required: true
+      description: Process ID (positive integer)
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+
+    stateParam:
+      name: state
+      in: query
+      required: false
+      description: |
+        Filter by process state label (case-insensitive).
+      schema:
+        type: string
+        enum:
+          - running
+          - sleeping
+          - disk-sleep
+          - zombie
+          - stopped
+          - tracing-stop
+          - dead
+          - parked
+          - idle
+      example: running
+
+    startedAfterParam:
+      name: started_after
+      in: query
+      required: false
+      description: |
+        Keep processes whose start time is greater than or equal to this value.
+        Unix epoch seconds (inclusive).
+        Must be less than or equal to started_before if both are provided.
+      schema:
+        type: integer
+        format: int64
+      example: 1750550400
+
+    startedBeforeParam:
+      name: started_before
+      in: query
+      required: false
+      description: |
+        Keep processes whose start time is less than or equal to this value.
+        Unix epoch seconds (inclusive).
+        Must be greater than or equal to started_after if both are provided.
+      schema:
+        type: integer
+        format: int64
+      example: 1750636800
+
+  schemas:
+    ProcessInfo:
+      type: object
+      required:
+        - pid
+        - ppid
+        - name
+        - cmdline
+        - state
+        - state_label
+        - start_time
+        - start_time_iso
+      properties:
+        pid:
+          type: integer
+          description: Process ID
+          examples:
+            - 1
+        ppid:
+          type: integer
+          description: Parent process ID
+          examples:
+            - 0
+        name:
+          type: string
+          description: Short process name from /proc/[pid]/stat comm field
+          examples:
+            - systemd
+        cmdline:
+          type: string
+          description: |
+            Full command line, argv joined with spaces.
+            Kernel threads with empty cmdlines are shown as [<name>].
+          examples:
+            - /sbin/init
+        state:
+          type: string
+          minLength: 1
+          maxLength: 1
+          description: State code from /proc/[pid]/stat
+          examples:
+            - S
+        state_label:
+          type: string
+          description: Human-readable state label
+          enum:
+            - running
+            - sleeping
+            - disk-sleep
+            - zombie
+            - stopped
+            - tracing-stop
+            - dead
+            - parked
+            - idle
+            - unknown
+          examples:
+            - sleeping
+        start_time:
+          type: integer
+          format: int64
+          description: Process start time as Unix epoch seconds (UTC)
+          examples:
+            - 1750550400
+        start_time_iso:
+          type: string
+          format: date-time
+          description: Process start time in ISO-8601 UTC format
+          examples:
+            - "2026-06-22T00:00:00Z"
+
+    ProcessList:
+      type: object
+      required:
+        - processes
+        - count
+      properties:
+        processes:
+          type: array
+          description: List of processes matching the applied filters.
+          items:
+            $ref: '#/components/schemas/ProcessInfo'
+          examples:
+            - pid: 1
+              ppid: 0
+              name: systemd
+              cmdline: /sbin/init
+              state: S
+              state_label: sleeping
+              start_time: 1750550400
+              start_time_iso: "2026-06-22T00:00:00Z"
+        count:
+          type: integer
+          description: Number of processes in this response.
+          examples:
+            - 1
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - invalid_state
+                - invalid_time
+                - invalid_range
+                - invalid_pid
+                - not_found
+                - not_found_route
+                - method_not_allowed
+              examples:
+                - invalid_state
+            message:
+              type: string
+              examples:
+                - "unknown state 'foo'; valid: running, sleeping, disk-sleep, zombie, stopped, tracing-stop, dead, parked, idle"
+
+  responses:
+    BadRequest:
+      description: |
+        Invalid query parameter. Possible causes:
+        - unknown state label
+        - malformed epoch integer
+        - started_after > started_before
+        - pid is not a positive integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            invalidState:
+              summary: Unknown state label
+              value:
+                error:
+                  code: invalid_state
+                  message: "unknown state 'foo'; valid: running, sleeping, disk-sleep, zombie, stopped, tracing-stop, dead, parked, idle"
+            invalidTime:
+              summary: Malformed epoch
+              value:
+                error:
+                  code: invalid_time
+                  message: "started_after is not a valid integer"
+            invalidRange:
+              summary: Contradictory time range
+              value:
+                error:
+                  code: invalid_range
+                  message: "started_after must be <= started_before"
+            invalidPid:
+              summary: Non-integer PID
+              value:
+                error:
+                  code: invalid_pid
+                  message: "pid must be a positive integer"
+
+    NotFound:
+      description: Process not found (never existed or already exited)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: not_found
+              message: "no process with pid 99999"
+
+    MethodNotAllowed:
+      description: HTTP method other than GET used on a known path
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: method_not_allowed
+              message: "method POST is not allowed; use GET"

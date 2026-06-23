@@ -41,7 +41,7 @@ TEST(Collector, KernelThreadCmdline)
 
 TEST(Collector, CommWithParens)
 {
-    auto result = get_process(3, PROC);
+    auto result = get_process(90376, PROC);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result->get_comm(), "my(proc)name");
 }

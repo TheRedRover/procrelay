@@ -1,6 +1,7 @@
 #include "procrelay/collector.hpp"
 #include "procrelay/filters.hpp"
 #include "procrelay/log.hpp"
+#include "procrelay/version.hpp"
 
 #include <charconv>
 #include <cstdlib>
@@ -42,9 +43,15 @@ std::optional<int> parse_port(const std::string &s)
     return value;
 }
 
+void print_version()
+{
+    std::cout << "procrelay " << procrelay::VERSION << "\n";
+}
+
 void print_usage(const char *prog)
 {
     std::cout
+        << "procrelay " << procrelay::VERSION << "\n\n"
         << "Usage: " << prog << " [options]\n\n"
         << "Options:\n"
         << "  --port <n>         TCP port to listen on (default 8080, env PROCRELAY_PORT)\n"
@@ -52,6 +59,7 @@ void print_usage(const char *prog)
         << "  --proc-root <dir>  Root path for /proc reads (default /proc, env "
            "PROCRELAY_PROC_ROOT)\n"
         << "  --log-level <lvl>  debug|info|warn|error (default info, env PROCRELAY_LOG_LEVEL)\n"
+        << "  -v, --version      Show version and exit\n"
         << "  -h, --help         Show this help and exit\n";
 }
 
@@ -71,12 +79,13 @@ bool load_config(int argc, char **argv, Config &cfg)
         {"bind", required_argument, nullptr, OPT_BIND},
         {"proc-root", required_argument, nullptr, OPT_PROC_ROOT},
         {"log-level", required_argument, nullptr, OPT_LOG_LEVEL},
+        {"version", no_argument, nullptr, 'v'},
         {"help", no_argument, nullptr, 'h'},
         {nullptr, 0, nullptr, 0},
     };
 
     int opt = 0;
-    while ((opt = getopt_long(argc, argv, "h", longopts, nullptr)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hv", longopts, nullptr)) != -1) {
         switch (opt) {
         case OPT_PORT:
             port_raw = optarg;
@@ -90,6 +99,9 @@ bool load_config(int argc, char **argv, Config &cfg)
         case OPT_LOG_LEVEL:
             cfg.log_level = optarg;
             break;
+        case 'v':
+            print_version();
+            std::exit(0);
         case 'h':
             print_usage(argv[0]);
             std::exit(0);
@@ -231,8 +243,8 @@ int main(int argc, char **argv)
         log::info(req.method, " ", req.path, " -> ", res.status);
     });
 
-    log::info("procrelay listening on ", cfg.bind, ":", cfg.port, " (proc-root=", cfg.proc_root,
-              ")");
+    log::info("procrelay ", procrelay::VERSION, " listening on ", cfg.bind, ":", cfg.port,
+              " (proc-root=", cfg.proc_root, ")");
 
     if (!svr.listen(cfg.bind, cfg.port)) {
         log::error("failed to bind ", cfg.bind, ":", cfg.port);

@@ -7,6 +7,29 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 
+set(PROCRELAY_VERSION "")
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} describe --tags --dirty
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE PROCRELAY_GIT_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE PROCRELAY_GIT_RESULT
+        ERROR_QUIET)
+    if(PROCRELAY_GIT_RESULT EQUAL 0 AND PROCRELAY_GIT_VERSION)
+        set(PROCRELAY_VERSION "${PROCRELAY_GIT_VERSION}")
+    endif()
+endif()
+if(NOT PROCRELAY_VERSION AND EXISTS "${CMAKE_SOURCE_DIR}/VERSION")
+    file(READ "${CMAKE_SOURCE_DIR}/VERSION" PROCRELAY_VERSION)
+    string(STRIP "${PROCRELAY_VERSION}" PROCRELAY_VERSION)
+endif()
+if(NOT PROCRELAY_VERSION)
+    set(PROCRELAY_VERSION "unknown")
+endif()
+message(STATUS "procrelay version: ${PROCRELAY_VERSION}")
+
 option(PROCRELAY_BUILD_TESTS "Build the unit test suite" ON)
 option(PROCRELAY_STATIC "Link executables statically (for scratch-based images)" OFF)
 

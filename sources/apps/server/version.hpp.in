@@ -1,0 +1,11 @@
+#ifndef PROCRELAY_VERSION_HPP
+#define PROCRELAY_VERSION_HPP
+
+namespace procrelay
+{
+
+inline constexpr const char *VERSION = "@PROCRELAY_VERSION@";
+
+} // namespace procrelay
+
+#endif // PROCRELAY_VERSION_HPP

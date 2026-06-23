@@ -9,8 +9,9 @@ target_include_directories(procrelay_lib
 )
 
 target_link_libraries(procrelay_lib
-    PRIVATE
+    PUBLIC
         nlohmann_json::nlohmann_json
+    PRIVATE
         procrelay_log
 )
 

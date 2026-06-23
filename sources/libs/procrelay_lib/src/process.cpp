@@ -110,7 +110,7 @@ const std::string &valid_state_labels()
     return labels;
 }
 
-std::string ProcessInfo::to_json() const
+nlohmann::json ProcessInfo::to_json_obj() const
 {
     nlohmann::json j;
     j["pid"]         = m_pid;
@@ -130,7 +130,12 @@ std::string ProcessInfo::to_json() const
     } else {
         j["start_time_iso"] = nullptr;
     }
-    return j.dump();
+    return j;
+}
+
+std::string ProcessInfo::to_json() const
+{
+    return to_json_obj().dump();
 }
 
 } // namespace procrelay

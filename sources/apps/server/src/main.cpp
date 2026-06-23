@@ -150,7 +150,7 @@ std::string process_list_body(const std::vector<ProcessInfo> &procs)
 {
     nlohmann::json arr = nlohmann::json::array();
     for (const auto &proc : procs) {
-        arr.push_back(nlohmann::json::parse(proc.to_json()));
+        arr.push_back(proc.to_json_obj());
     }
     nlohmann::json j;
     j["processes"] = std::move(arr);

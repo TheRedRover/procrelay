@@ -7,6 +7,7 @@
 #define PROCRELAY_PROCESS_HPP
 
 #include <cstdint>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -58,7 +59,8 @@ public:
     std::optional<int64_t>          get_start_time() const { return m_start_time; }
     std::optional<std::string>      get_start_time_iso() const { return m_start_time_iso; }
 
-    std::string to_json() const;
+    nlohmann::json to_json_obj() const;
+    std::string    to_json() const;
 
 private:
     int                        m_pid{-1};

@@ -1,3 +1,7 @@
+#include "procrelay/collector.hpp"
+#include "procrelay/filters.hpp"
+#include "procrelay/log.hpp"
+
 #include <charconv>
 #include <cstdlib>
 #include <getopt.h>
@@ -5,9 +9,6 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <optional>
-#include <procrelay/collector.hpp>
-#include <procrelay/filters.hpp>
-#include <procrelay/log.hpp>
 #include <string>
 #include <vector>
 

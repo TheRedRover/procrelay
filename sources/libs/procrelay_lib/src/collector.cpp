@@ -22,7 +22,8 @@ namespace fs = std::filesystem;
  * @brief Reads a file into a string
  *
  * @param path The path to the file to read
- * @return std::optional<std::string>
+ * @return std::optional<std::string> The file content, or std::nullopt if the file does not exist
+ *         or if the file cannot be read.
  */
 std::optional<std::string> read_file(const fs::path &path)
 {
@@ -49,7 +50,7 @@ std::optional<std::string> read_file(const fs::path &path)
  * @brief Checks if a string is a valid PID directory name
  *
  * @param name The directory name to check
- * @return true if the name is a valid PID directory name, false otherwise
+ * @return true if the name is a valid PID directory name false otherwise
  */
 bool is_pid_dir_name(const std::string &name)
 {
@@ -145,11 +146,11 @@ std::string make_iso8601_utc(int64_t epoch_seconds)
 
 /**
  * @brief Parses a single /proc/[pid] directory into a ProcessInfo.
-
  *
  * @param pid_dir Path to the process directory
  * @param ctx Cached system values
- * @return A populated ProcessInfo, or std::nullopt if a required file is missing or malformed
+ * @return std::optional<ProcessInfo> A populated ProcessInfo, or std::nullopt
+ *         if a required file is missing or malformed.
  */
 std::optional<ProcessInfo> parse_process(const fs::path &pid_dir, const SystemContext &ctx)
 {

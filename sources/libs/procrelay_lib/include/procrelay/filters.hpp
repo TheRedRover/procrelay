@@ -43,7 +43,21 @@ struct FilterParams {
     std::optional<std::string> started_before = std::nullopt;
 };
 
-ParseResult              parse_filters(const FilterParams &params);
+/**
+ * @brief Parse the filter parameters
+ *
+ * @param params The filter parameters
+ * @return ParseResult A ParseResult object, or a FilterError if the filter parameters are invalid
+ */
+ParseResult parse_filters(const FilterParams &params);
+
+/**
+ * @brief Apply the filters to a list of ProcessInfo objects
+ *
+ * @param procs The list of ProcessInfo objects
+ * @param chain The filter chain
+ * @return std::vector<ProcessInfo> A list of ProcessInfo objects that match the filters
+ */
 std::vector<ProcessInfo> apply_filters(const std::vector<ProcessInfo> &procs,
                                        const FilterChain              &chain);
 

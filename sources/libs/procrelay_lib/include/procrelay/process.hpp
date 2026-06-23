@@ -40,6 +40,9 @@ std::optional<ProcessState> state_from_label(std::string_view label);
  */
 const std::string &valid_state_labels();
 
+/**
+ * @brief The ProcessInfo class represents a process state and info
+ */
 class ProcessInfo
 {
 public:

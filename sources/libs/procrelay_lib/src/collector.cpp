@@ -93,6 +93,12 @@ struct SystemContext {
     long                   m_clk_tck;
 };
 
+/**
+ * @brief Populate boot time and clock tick values
+ *
+ * @param proc_root The path to the proc root
+ * @return SystemContext The SystemContext object with the boot time and clock tick values
+ */
 SystemContext make_system_context(const fs::path &proc_root)
 {
     SystemContext ctx{read_btime(proc_root), ::sysconf(_SC_CLK_TCK)};
@@ -130,6 +136,12 @@ std::vector<std::string> parse_cmdline(const fs::path &pid_dir)
     return parts;
 }
 
+/**
+ * @brief Convert an epoch seconds to an ISO-8601 UTC string
+ *
+ * @param epoch_seconds The epoch seconds to convert
+ * @return std::string The ISO-8601 UTC string
+ */
 std::string make_iso8601_utc(int64_t epoch_seconds)
 {
     std::time_t t = static_cast<std::time_t>(epoch_seconds);

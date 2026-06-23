@@ -22,7 +22,8 @@ TEST(Collector, GetNormalProcess)
                                         "--deserialize=52", "splash"}));
     EXPECT_EQ(result->get_state_code(), 'S');
     EXPECT_EQ(result->get_state(), ProcessState::SLEEPING);
-    EXPECT_GT(result->get_start_time(), 0);
+    ASSERT_TRUE(result->get_start_time().has_value());
+    EXPECT_GT(*result->get_start_time(), 0);
 }
 
 TEST(Collector, GetMissingProcess)

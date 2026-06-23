@@ -44,7 +44,8 @@ class ProcessInfo
 public:
     ProcessInfo() = default;
     ProcessInfo(int pid, int ppid, std::string comm, std::vector<std::string> cmdline,
-                char state_code, double cpu_time_s, int64_t start_time, std::string start_time_iso);
+                char state_code, double cpu_time_s, std::optional<int64_t> start_time,
+                std::optional<std::string> start_time_iso);
 
     int                             get_pid() const { return m_pid; }
     int                             get_ppid() const { return m_ppid; }
@@ -54,21 +55,21 @@ public:
     ProcessState                    get_state() const { return m_state; }
     std::string                     get_state_label() const { return label_from_state(m_state); }
     double                          get_cpu_time_s() const { return m_cpu_time_s; }
-    int64_t                         get_start_time() const { return m_start_time; }
-    const std::string              &get_start_time_iso() const { return m_start_time_iso; }
+    std::optional<int64_t>          get_start_time() const { return m_start_time; }
+    std::optional<std::string>      get_start_time_iso() const { return m_start_time_iso; }
 
     std::string to_json() const;
 
 private:
-    int                      m_pid{-1};
-    int                      m_ppid{-1};
-    std::string              m_comm;
-    std::vector<std::string> m_cmdline;
-    char                     m_state_code{0};
-    ProcessState             m_state{ProcessState::UNKNOWN};
-    double                   m_cpu_time_s{0.0};
-    int64_t                  m_start_time{-1};
-    std::string              m_start_time_iso;
+    int                        m_pid{-1};
+    int                        m_ppid{-1};
+    std::string                m_comm;
+    std::vector<std::string>   m_cmdline;
+    char                       m_state_code{0};
+    ProcessState               m_state{ProcessState::UNKNOWN};
+    double                     m_cpu_time_s{0.0};
+    std::optional<int64_t>     m_start_time{};
+    std::optional<std::string> m_start_time_iso{};
 };
 
 } // namespace procrelay

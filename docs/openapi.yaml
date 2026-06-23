@@ -191,13 +191,13 @@ components:
           format: double
           description: CPU time used (utime + stime), in seconds
         start_time:
-          type: integer
+          type: [integer, "null"]
           format: int64
-          description: Start time in Unix epoch seconds (UTC)
+          description: Start time in Unix epoch seconds (UTC); null when btime or clk_tck is unavailable
         start_time_iso:
-          type: string
+          type: [string, "null"]
           format: date-time
-          description: Start time as an ISO-8601 UTC string
+          description: Start time as an ISO-8601 UTC string; null when start_time is unavailable
 
     ProcessList:
       type: object

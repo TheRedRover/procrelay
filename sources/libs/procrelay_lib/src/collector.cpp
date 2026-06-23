@@ -213,19 +213,18 @@ std::optional<ProcessInfo> parse_process(const fs::path &pid_dir, const SystemCo
         cpu_time_s = static_cast<double>(utime + stime) / static_cast<double>(ctx.m_clk_tck);
     }
 
-    // start_time is only meaningful when both btime and clk_tck are known.
-    // Otherwise leave it as -1.
-    int64_t     start_time = -1;
-    std::string start_time_iso;
+    std::optional<int64_t>     start_time;
+    std::optional<std::string> start_time_iso;
     if (ctx.m_btime.has_value() && ctx.m_clk_tck > 0) {
-        start_time     = *ctx.m_btime + starttime / ctx.m_clk_tck;
-        start_time_iso = make_iso8601_utc(start_time);
+        const int64_t epoch = *ctx.m_btime + starttime / ctx.m_clk_tck;
+        start_time          = epoch;
+        start_time_iso      = make_iso8601_utc(epoch);
     }
 
     std::vector<std::string> cmdline = parse_cmdline(pid_dir);
 
     return ProcessInfo(pid, ppid, std::move(comm), std::move(cmdline), state_code, cpu_time_s,
-                       start_time, std::move(start_time_iso));
+                       std::move(start_time), std::move(start_time_iso));
 }
 
 } // namespace

@@ -45,7 +45,12 @@ std::vector<ProcessInfo> apply_one(std::vector<ProcessInfo> procs, const TimeRan
 {
     procs.erase(std::remove_if(procs.begin(), procs.end(),
                                [&](const ProcessInfo &p) {
-                                   const int64_t t = p.get_start_time();
+                                   const std::optional<int64_t> start = p.get_start_time();
+                                   if (!start.has_value()) {
+                                       // Exclude if start time is not available
+                                       return true;
+                                   }
+                                   const int64_t t = *start;
                                    return (f.m_after.has_value() && t < *f.m_after) ||
                                           (f.m_before.has_value() && t > *f.m_before);
                                }),

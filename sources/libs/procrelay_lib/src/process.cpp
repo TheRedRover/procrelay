@@ -27,11 +27,11 @@ constexpr std::array<StateMapping, 10> STATE_TABLE{{
 }};
 
 ProcessInfo::ProcessInfo(int pid, int ppid, std::string comm, std::vector<std::string> cmdline,
-                         char state_code, double cpu_time_s, int64_t start_time,
-                         std::string start_time_iso)
+                         char state_code, double cpu_time_s, std::optional<int64_t> start_time,
+                         std::optional<std::string> start_time_iso)
     : m_pid(pid), m_ppid(ppid), m_comm(std::move(comm)), m_cmdline(std::move(cmdline)),
       m_state_code(state_code), m_state(state_from_char(state_code)), m_cpu_time_s(cpu_time_s),
-      m_start_time(start_time), m_start_time_iso(std::move(start_time_iso))
+      m_start_time(std::move(start_time)), m_start_time_iso(std::move(start_time_iso))
 {
 }
 
@@ -113,15 +113,23 @@ const std::string &valid_state_labels()
 std::string ProcessInfo::to_json() const
 {
     nlohmann::json j;
-    j["pid"]            = m_pid;
-    j["ppid"]           = m_ppid;
-    j["comm"]           = m_comm;
-    j["cmdline"]        = m_cmdline;
-    j["state"]          = std::string(1, m_state_code);
-    j["state_label"]    = label_from_state(m_state);
-    j["cpu_time_s"]     = m_cpu_time_s;
-    j["start_time"]     = m_start_time;
-    j["start_time_iso"] = m_start_time_iso;
+    j["pid"]         = m_pid;
+    j["ppid"]        = m_ppid;
+    j["comm"]        = m_comm;
+    j["cmdline"]     = m_cmdline;
+    j["state"]       = std::string(1, m_state_code);
+    j["state_label"] = label_from_state(m_state);
+    j["cpu_time_s"]  = m_cpu_time_s;
+    if (m_start_time.has_value()) {
+        j["start_time"] = *m_start_time;
+    } else {
+        j["start_time"] = nullptr;
+    }
+    if (m_start_time_iso.has_value()) {
+        j["start_time_iso"] = *m_start_time_iso;
+    } else {
+        j["start_time_iso"] = nullptr;
+    }
     return j.dump();
 }
 

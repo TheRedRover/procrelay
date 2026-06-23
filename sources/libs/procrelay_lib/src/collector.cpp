@@ -88,14 +88,14 @@ std::optional<int64_t> read_btime(const fs::path &proc_root)
  * @brief System-wide values that are constant for the duration of a single scan
  */
 struct SystemContext {
-    int64_t m_btime;
-    long    m_clk_tck;
+    std::optional<int64_t> m_btime;
+    long                   m_clk_tck;
 };
 
 SystemContext make_system_context(const fs::path &proc_root)
 {
-    SystemContext ctx{read_btime(proc_root).value_or(0), ::sysconf(_SC_CLK_TCK)};
-    log::debug("system context: btime=", ctx.m_btime, " clk_tck=", ctx.m_clk_tck);
+    SystemContext ctx{read_btime(proc_root), ::sysconf(_SC_CLK_TCK)};
+    log::debug("system context: btime=", ctx.m_btime.value_or(-1), " clk_tck=", ctx.m_clk_tck);
     return ctx;
 }
 
@@ -207,12 +207,21 @@ std::optional<ProcessInfo> parse_process(const fs::path &pid_dir, const SystemCo
         return std::nullopt;
     }
 
-    double  cpu_time_s = (ctx.m_clk_tck > 0) ? static_cast<double>(utime + stime) /
-                                                  static_cast<double>(ctx.m_clk_tck)
-                                             : 0.0;
-    int64_t start_time = ctx.m_clk_tck > 0 ? ctx.m_btime + starttime / ctx.m_clk_tck : ctx.m_btime;
-    std::string              start_time_iso = make_iso8601_utc(start_time);
-    std::vector<std::string> cmdline        = parse_cmdline(pid_dir);
+    double cpu_time_s = 0.0;
+    if (ctx.m_clk_tck > 0) {
+        cpu_time_s = static_cast<double>(utime + stime) / static_cast<double>(ctx.m_clk_tck);
+    }
+
+    // start_time is only meaningful when both btime and clk_tck are known.
+    // Otherwise leave it as -1.
+    int64_t     start_time = -1;
+    std::string start_time_iso;
+    if (ctx.m_btime.has_value() && ctx.m_clk_tck > 0) {
+        start_time     = *ctx.m_btime + starttime / ctx.m_clk_tck;
+        start_time_iso = make_iso8601_utc(start_time);
+    }
+
+    std::vector<std::string> cmdline = parse_cmdline(pid_dir);
 
     return ProcessInfo(pid, ppid, std::move(comm), std::move(cmdline), state_code, cpu_time_s,
                        start_time, std::move(start_time_iso));
@@ -234,12 +243,22 @@ std::vector<ProcessInfo> scan(const std::filesystem::path &proc_root)
 
     SystemContext ctx = make_system_context(proc_root);
 
-    for (const auto &entry : fs::directory_iterator(proc_root, ec)) {
+    fs::directory_iterator it(proc_root, ec);
+    if (ec) {
+        log::warn("failed to open ", proc_root.string(), ": ", ec.message());
+        return result;
+    }
+
+    const fs::directory_iterator end;
+    for (; it != end; it.increment(ec)) {
         if (ec) {
             log::warn("directory iteration over ", proc_root.string(), " failed: ", ec.message());
             break;
         }
-        if (!entry.is_directory()) {
+
+        const fs::directory_entry &entry = *it;
+        std::error_code            entry_ec;
+        if (!entry.is_directory(entry_ec) || entry_ec) {
             continue;
         }
         if (!is_pid_dir_name(entry.path().filename().string())) {
